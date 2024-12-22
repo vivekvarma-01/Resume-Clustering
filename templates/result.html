@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Clusters</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Resume Clustering Results</h1>
+
+        <!-- Chart displaying cluster distribution -->
+        <div class="mb-4">
+            <canvas id="clusterChart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Accordion displaying resumes in each cluster -->
+        <div class="accordion" id="clustersAccordion">
+            {% for cluster_id, filenames in clusters.items() %}
+            <div class="card">
+                <div class="card-header" id="heading{{ cluster_id }}">
+                    <h2 class="mb-0">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse{{ cluster_id }}" aria-expanded="true" aria-controls="collapse{{ cluster_id }}">
+                            Cluster {{ cluster_id }}: {{ summaries[cluster_id] }}
+                        </button>
+                    </h2>
+                </div>
+                <div id="collapse{{ cluster_id }}" class="collapse" aria-labelledby="heading{{ cluster_id }}" data-parent="#clustersAccordion">
+                    <div class="card-body">
+                        <ul>
+                            {% for filename in filenames %}
+                            <li>{{ filename }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="btn btn-primary">Go Back to Upload Page</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var ctx = document.getElementById('clusterChart').getContext('2d');
+            var clusters = {{ clusters|tojson }};
+            var summaries = {{ summaries|tojson }};
+            var clusterLabels = Object.keys(clusters).map(function(key) {
+                return 'Cluster ' + key;
+            });
+            var clusterSummaries = Object.keys(clusters).map(function(key) {
+                return summaries[key];
+            });
+            var clusterData = {
+                labels: clusterLabels,
+                datasets: [{
+                    label: 'Number of Resumes',
+                    data: Object.values(clusters).map(cluster => cluster.length),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            };
+            var clusterChart = new Chart(ctx, {
+                type: 'bar',
+                data: clusterData,
+                options: {
+                    indexAxis: 'y',
+                    plugins: {
+                        datalabels: {
+                            color: 'black',
+                            anchor: 'end',
+                            align: 'end',
+                            formatter: function(value, context) {
+                                return clusterSummaries[context.dataIndex];
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
